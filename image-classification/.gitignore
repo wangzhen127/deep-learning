@@ -1,6 +1,10 @@
 __pycache__/
+checkpoint
 cifar-10-batches-py/
 cifar-10-python.tar.gz
+image_classification.data-00000-of-00001
+image_classification.index
+image_classification.meta
 preprocess_batch_1.p
 preprocess_batch_2.p
 preprocess_batch_3.p
