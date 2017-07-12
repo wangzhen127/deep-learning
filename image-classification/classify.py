@@ -281,16 +281,6 @@ def test(batch_size):
         print('Testing Accuracy: {}\n'.format(
             test_batch_acc_total/test_batch_count))
 
-        # Print Random Samples
-        random_test_features, random_test_labels = tuple(zip(
-            *random.sample(list(zip(test_features, test_labels)), n_samples)))
-        random_test_predictions = sess.run(
-            tf.nn.top_k(tf.nn.softmax(loaded_logits), top_n_predictions),
-            feed_dict={loaded_x: random_test_features,
-                       loaded_y: random_test_labels,
-                       loaded_keep_prob: 1.0})
-
-
 def main():
     DownloadDataSet()
     tests.test_folder_path(cifar10_dataset_folder_path)
