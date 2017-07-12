@@ -25,7 +25,10 @@ class DLProgress(tqdm):
 
 def DownloadDataSet():
     if not isfile(tar_gz_path):
-        with DLProgress(unit='B', unit_scale=True, miniters=1, desc='CIFAR-10 Dataset') as pbar:
+        with DLProgress(unit='B',
+                        unit_scale=True,
+                        miniters=1,
+                        desc='CIFAR-10 Dataset') as pbar:
             urlretrieve(
                 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz',
                 tar_gz_path,
@@ -46,12 +49,14 @@ def normalize(x):
     range_high = 1
     min_value = 0
     max_value = 255
-    return range_low + ( ( (x - min_value)*(range_high - range_low) )/( max_value - min_value ) )
+    return range_low + (
+        ( (x - min_value)*(range_high - range_low) )/( max_value - min_value ) )
 
 
 def one_hot_encode(x):
     """
-    One hot encode a list of sample labels. Return a one-hot encoded vector for each label.
+    One hot encode a list of sample labels. Return a one-hot encoded vector for
+    each label.
     : x: List of sample Labels
     : return: Numpy array of one-hot encoded labels
     """
@@ -59,93 +64,6 @@ def one_hot_encode(x):
     lb = preprocessing.LabelBinarizer()
     lb.fit(LABELS)
     return lb.transform(x)
-
-
-def conv2d_maxpool(x_tensor, conv_num_outputs, conv_ksize, conv_strides, pool_ksize, pool_strides):
-    """
-    Apply convolution then max pooling to x_tensor
-    :param x_tensor: TensorFlow Tensor
-    :param conv_num_outputs: Number of outputs for the convolutional layer
-    :param conv_ksize: kernal size 2-D Tuple for the convolutional layer
-    :param conv_strides: Stride 2-D Tuple for convolution
-    :param pool_ksize: kernal size 2-D Tuple for pool
-    :param pool_strides: Stride 2-D Tuple for pool
-    : return: A tensor that represents convolution and max pooling of x_tensor
-    """
-    batch, image_width, image_height, color_channels = x_tensor.get_shape().as_list()
-
-    conv_filter_height = conv_ksize[0]
-    conv_filter_width = conv_ksize[1]
-    conv_strides_height = conv_strides[0]
-    conv_strides_width = conv_strides[1]
-
-    weight = tf.Variable(tf.truncated_normal(
-        [conv_filter_height, conv_filter_width, color_channels, conv_num_outputs]))
-    bias = tf.Variable(tf.zeros(conv_num_outputs))
-
-    conv_layer = tf.nn.conv2d(
-        x_tensor,
-        weight,
-        strides=[1, conv_strides_height, conv_strides_width, 1],
-        padding='SAME')
-    conv_layer = tf.nn.bias_add(conv_layer, bias)
-    conv_layer = tf.nn.relu(conv_layer)
-
-    pool_height = pool_ksize[0]
-    pool_width = pool_ksize[1]
-    pool_strides_height = pool_strides[0]
-    pool_strides_width = pool_strides[1]
-
-    conv_layer = tf.nn.max_pool(
-        conv_layer,
-        ksize=[1, pool_height, pool_width, 1],
-        strides=[1, pool_strides_height, pool_strides_width, 1],
-        padding='SAME')
-
-    return conv_layer
-
-
-def flatten(x_tensor):
-    """
-    Flatten x_tensor to (Batch Size, Flattened Image Size)
-    : x_tensor: A tensor of size (Batch Size, ...), where ... are the image dimensions.
-    : return: A tensor of size (Batch Size, Flattened Image Size).
-    """
-    batch, image_width, image_height, color_channels = x_tensor.get_shape().as_list()
-    return tf.reshape(x_tensor, [-1, image_width*image_height*color_channels])
-
-
-def fully_conn(x_tensor, num_outputs):
-    """
-    Apply a fully connected layer to x_tensor using weight and bias
-    : x_tensor: A 2-D tensor where the first dimension is batch size.
-    : num_outputs: The number of output that the new tensor should be.
-    : return: A 2-D tensor where the second dimension is num_outputs.
-    """
-    # TODO: Implement Function
-    batch, num_inputs = x_tensor.get_shape().as_list()
-    weight = tf.Variable(tf.random_normal([num_inputs, num_outputs]))
-    bias = tf.Variable(tf.random_normal([num_outputs]))
-
-    fc = tf.add(tf.matmul(x_tensor, weight), bias)
-    fc = tf.nn.relu(fc)
-
-    return fc
-
-
-def output(x_tensor, num_outputs):
-    """
-    Apply a output layer to x_tensor using weight and bias
-    : x_tensor: A 2-D tensor where the first dimension is batch size.
-    : num_outputs: The number of output that the new tensor should be.
-    : return: A 2-D tensor where the second dimension is num_outputs.
-    """
-    # TODO: Implement Function
-    batch, num_inputs = x_tensor.get_shape().as_list()
-    weight = tf.Variable(tf.random_normal([num_inputs, num_outputs]))
-    bias = tf.Variable(tf.random_normal([num_outputs]))
-
-    return tf.add(tf.matmul(x_tensor, weight), bias)
 
 
 def conv_net(x, keep_prob):
@@ -156,20 +74,57 @@ def conv_net(x, keep_prob):
     : return: Tensor that represents logits
     """
     # Apply 1, 2, or 3 Convolution and Max Pool layers
-    conv = conv2d_maxpool(x, 64, (3, 3), (1, 1), (2, 2), (2, 2))
-    conv = conv2d_maxpool(conv, 128, (3, 3), (1, 1), (2, 2), (2, 2))
+    conv = tf.contrib.layers.conv2d(
+        inputs=x,
+        num_outputs=64,
+        kernel_size=3,
+        stride=1,
+        padding='SAME',
+        activation_fn=tf.nn.relu,
+        weights_initializer=tf.truncated_normal_initializer,
+        biases_initializer=tf.zeros_initializer)
+    conv = tf.contrib.layers.max_pool2d(
+        inputs=conv,
+        kernel_size=2,
+        stride=2,
+        padding='SAME')
+
+    conv = tf.contrib.layers.conv2d(
+        inputs=conv,
+        num_outputs=128,
+        kernel_size=3,
+        stride=1,
+        padding='SAME',
+        activation_fn=tf.nn.relu,
+        weights_initializer=tf.truncated_normal_initializer,
+        biases_initializer=tf.zeros_initializer)
+    conv = tf.contrib.layers.max_pool2d(
+        inputs=conv,
+        kernel_size=2,
+        stride=2,
+        padding='SAME')
 
     # Apply a Flatten Layer
-    flat = flatten(conv)
+    flat = tf.contrib.layers.flatten(inputs=conv)
 
     # Apply 1, 2, or 3 Fully Connected Layers
     batch, fc_num = flat.get_shape().as_list()
+    fc = tf.contrib.layers.fully_connected(
+        inputs=flat,
+        num_outputs=fc_num,
+        activation_fn=tf.nn.relu,
+        weights_initializer=tf.random_normal_initializer,
+        biases_initializer=tf.random_normal_initializer)
 
-    fc = fully_conn(flat, fc_num)
     fc = tf.nn.dropout(fc, keep_prob)
 
-    # Apply an Output Layer
-    out = output(fc, 10)
+    # Apply an Output Layer (linear, no activation)
+    out = tf.contrib.layers.fully_connected(
+        inputs=fc,
+        num_outputs=10,
+        activation_fn=None,
+        weights_initializer=tf.random_normal_initializer,
+        biases_initializer=tf.random_normal_initializer)
 
     return out
 
