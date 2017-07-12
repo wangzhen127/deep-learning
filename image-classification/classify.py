@@ -81,7 +81,8 @@ def conv_net(x, keep_prob):
         kernel_size=3,
         stride=1,
         padding='SAME',
-        activation_fn=tf.nn.relu)
+        activation_fn=tf.nn.relu,
+        normalizer_fn=tf.contrib.layers.batch_norm)
     conv = tf.contrib.layers.max_pool2d(
         inputs=conv,
         kernel_size=2,
@@ -94,7 +95,8 @@ def conv_net(x, keep_prob):
         kernel_size=3,
         stride=1,
         padding='SAME',
-        activation_fn=tf.nn.relu)
+        activation_fn=tf.nn.relu,
+        normalizer_fn=tf.contrib.layers.batch_norm)
     conv = tf.contrib.layers.max_pool2d(
         inputs=conv,
         kernel_size=2,
@@ -109,7 +111,8 @@ def conv_net(x, keep_prob):
     fc = tf.contrib.layers.fully_connected(
         inputs=flat,
         num_outputs=fc_num,
-        activation_fn=tf.nn.relu)
+        activation_fn=tf.nn.relu,
+        normalizer_fn=tf.contrib.layers.batch_norm)
 
     fc = tf.nn.dropout(fc, keep_prob)
 
@@ -117,7 +120,8 @@ def conv_net(x, keep_prob):
     out = tf.contrib.layers.fully_connected(
         inputs=fc,
         num_outputs=10,
-        activation_fn=None)
+        activation_fn=None,
+        normalizer_fn=tf.contrib.layers.batch_norm)
 
     return out
 
