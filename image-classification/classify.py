@@ -1,21 +1,20 @@
 import helper
 import numpy as np
-from os.path import isfile, isdir
+import os
 import pickle
-import problem_unittests as tests
 import random
-from sklearn import preprocessing
+import sklearn
 import tarfile
 import time
 import tensorflow as tf
-from tqdm import tqdm
-from urllib.request import urlretrieve
+import tqdm
+import urllib
 
 cifar10_dataset_folder_path = 'cifar-10-batches-py'
 tar_gz_path = 'cifar-10-python.tar.gz'
 
 
-class DLProgress(tqdm):
+class DLProgress(tqdm.tqdm):
     last_block = 0
 
     def hook(self, block_num=1, block_size=1, total_size=None):
@@ -25,20 +24,44 @@ class DLProgress(tqdm):
 
 
 def DownloadDataSet():
-    if not isfile(tar_gz_path):
+    print('Download dataset... ', end='');
+    if not os.path.isfile(tar_gz_path):
         with DLProgress(unit='B',
                         unit_scale=True,
                         miniters=1,
                         desc='CIFAR-10 Dataset') as pbar:
-            urlretrieve(
+            urllib.request.urlretrieve(
                 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz',
                 tar_gz_path,
                 pbar.hook)
 
-    if not isdir(cifar10_dataset_folder_path):
+    if not os.path.isdir(cifar10_dataset_folder_path):
         with tarfile.open(tar_gz_path) as tar:
             tar.extractall()
             tar.close()
+
+    assert cifar10_dataset_folder_path is not None,\
+        'Cifar-10 data folder not set.'
+    assert cifar10_dataset_folder_path[-1] != '/',\
+        'The "/" shouldn\'t be added to the end of the path.'
+    assert os.path.exists(cifar10_dataset_folder_path),\
+        'Path not found.'
+    assert os.path.isdir(cifar10_dataset_folder_path),\
+        '{} is not a folder.'.format(
+            os.path.basename(cifar10_dataset_folder_path))
+
+    train_files = [cifar10_dataset_folder_path + '/data_batch_' +
+                   str(batch_id) for batch_id in range(1, 6)]
+    other_files = [cifar10_dataset_folder_path + '/batches.meta',
+                   cifar10_dataset_folder_path + '/test_batch']
+    missing_files = [path for path in train_files + other_files
+                     if not os.path.exists(path)]
+
+    assert not missing_files,\
+        'Missing files in directory: {}'.format(missing_files)
+
+    print('All files found!')
+
 
 def normalize(x):
     """
@@ -62,7 +85,7 @@ def one_hot_encode(x):
     : return: Numpy array of one-hot encoded labels
     """
     LABELS = np.array([0,1,2,3,4,5,6,7,8,9])
-    lb = preprocessing.LabelBinarizer()
+    lb = sklearn.preprocessing.LabelBinarizer()
     lb.fit(LABELS)
     return lb.transform(x)
 
@@ -279,9 +302,8 @@ def test(batch_size):
 
 def main():
     DownloadDataSet()
-    tests.test_folder_path(cifar10_dataset_folder_path)
 
-    if not isfile('preprocess_validation.p'):
+    if not os.path.isfile('preprocess_validation.p'):
         helper.preprocess_and_save_data(
             cifar10_dataset_folder_path, normalize, one_hot_encode)
     valid_features, valid_labels = pickle.load(
