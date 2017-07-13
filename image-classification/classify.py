@@ -24,7 +24,7 @@ class DLProgress(tqdm.tqdm):
 
 
 def DownloadDataSet():
-    print('Download dataset... ', end='');
+    print('Download dataset if needed...');
     if not os.path.isfile(tar_gz_path):
         with DLProgress(unit='B',
                         unit_scale=True,
@@ -96,11 +96,23 @@ def conv_net(x, keep_prob):
     : x: Placeholder tensor that holds image data.
     : keep_prob: Placeholder tensor that hold dropout keep probability.
     : return: Tensor that represents logits
+
+    With this convolutional network architecture, the accuracy is around 84%.
     """
-    # Apply 1, 2, or 3 Convolution and Max Pool layers
+    conv = x
+
+    # Convolution and Max Pool layers
     conv = tf.contrib.layers.conv2d(
-        inputs=x,
-        num_outputs=64,
+        inputs=conv,
+        num_outputs=96,
+        kernel_size=3,
+        stride=1,
+        padding='SAME',
+        activation_fn=tf.nn.relu,
+        normalizer_fn=tf.contrib.layers.batch_norm)
+    conv = tf.contrib.layers.conv2d(
+        inputs=conv,
+        num_outputs=96,
         kernel_size=3,
         stride=1,
         padding='SAME',
@@ -108,13 +120,21 @@ def conv_net(x, keep_prob):
         normalizer_fn=tf.contrib.layers.batch_norm)
     conv = tf.contrib.layers.max_pool2d(
         inputs=conv,
-        kernel_size=2,
+        kernel_size=3,
         stride=2,
         padding='SAME')
 
     conv = tf.contrib.layers.conv2d(
         inputs=conv,
-        num_outputs=128,
+        num_outputs=192,
+        kernel_size=3,
+        stride=1,
+        padding='SAME',
+        activation_fn=tf.nn.relu,
+        normalizer_fn=tf.contrib.layers.batch_norm)
+    conv = tf.contrib.layers.conv2d(
+        inputs=conv,
+        num_outputs=192,
         kernel_size=3,
         stride=1,
         padding='SAME',
@@ -122,14 +142,23 @@ def conv_net(x, keep_prob):
         normalizer_fn=tf.contrib.layers.batch_norm)
     conv = tf.contrib.layers.max_pool2d(
         inputs=conv,
-        kernel_size=2,
+        kernel_size=3,
         stride=2,
         padding='SAME')
 
-    # Apply a Flatten Layer
+    conv = tf.contrib.layers.conv2d(
+        inputs=conv,
+        num_outputs=192,
+        kernel_size=3,
+        stride=1,
+        padding='SAME',
+        activation_fn=tf.nn.relu,
+        normalizer_fn=tf.contrib.layers.batch_norm)
+
+    # Flatten Layer
     flat = tf.contrib.layers.flatten(inputs=conv)
 
-    # Apply 1, 2, or 3 Fully Connected Layers
+    # Fully Connected Layers
     batch, fc_num = flat.get_shape().as_list()
     fc = tf.contrib.layers.fully_connected(
         inputs=flat,
@@ -139,7 +168,7 @@ def conv_net(x, keep_prob):
 
     fc = tf.nn.dropout(fc, keep_prob)
 
-    # Apply an Output Layer (linear, no activation)
+    # Output Layer (linear, no activation)
     out = tf.contrib.layers.fully_connected(
         inputs=fc,
         num_outputs=10,
@@ -311,13 +340,13 @@ def main():
 
     x, y, keep_prob, cost, optimizer, accuracy = build_nn()
 
-    epochs = 100
+    epochs = 50
     batch_size = 1024
     keep_probability = 0.75
 
     need_training = True
     if need_training:
-        if True:
+        if False:
             single_train(x, y, keep_prob, cost, optimizer, accuracy,
                          epochs, batch_size, keep_probability,
                          valid_features, valid_labels)
